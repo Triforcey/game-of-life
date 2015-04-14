@@ -9,8 +9,8 @@ int timeValii;
 int timeVal;
 int button = 8;
 int lightCount;
-int ledPixels[10][10];
-int ledPixelsRaw[10][10];
+int ledPixels[12][12];
+int ledPixelsRaw[12][12];
 
 //randomSeed(analogRead(0));
 // NeoPixel Ring simple sketch (c) 2013 Shae Erisson
