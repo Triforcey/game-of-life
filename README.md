@@ -1,4 +1,5 @@
 #Conway's Game of Life - Build with Arduino & Neopixel 8x8 LED Display
+This branch is a work in progress of possible imaginary pixels beyond the screen. :-)
 
 ##Arduino Dependencies
 This Game Of Life Arduino program depends on the following Arduino libraries:
