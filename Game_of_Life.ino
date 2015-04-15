@@ -1,7 +1,7 @@
 //color of the dots ({red, green, blue} max value 255 each]
-int colorOfPattern[3] = {50, 0, 0};
+int colorOfPattern[3] = {30, 0, 0};
 //color of background
-int colorOfBackground[3] = {0, 0, 50};
+int colorOfBackground[3] = {0, 0, 30};
 //-------------------------
 boolean buttonVal = LOW;
 boolean oldButtonVal = LOW;
