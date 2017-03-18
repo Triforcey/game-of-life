@@ -1,7 +1,7 @@
 //color of the dots ({red, green, blue} max value 255 each]
-int colorOfPattern[3] = {30, 0, 0};
+int colorOfPattern[3] = {0, 30, 0};
 //color of background
-int colorOfBackground[3] = {0, 0, 30};
+int colorOfBackground[3] = {0, 0, 10};
 //-------------------------
 boolean buttonVal = LOW;
 boolean oldButtonVal = LOW;
@@ -9,8 +9,15 @@ int timeValii;
 int timeVal;
 int button = 8;
 int lightCount;
-int ledPixels[10][10];
-int ledPixelsRaw[10][10];
+#define WIDTH 8
+#define HEIGHT 8
+int buttonEnabled = false;
+int newPixels[WIDTH][HEIGHT];
+#define HISTORY 5
+int pixelHistory[HISTORY][WIDTH][HEIGHT];
+int historyLength;
+int isEmpty;
+int isTheSame;
 
 //randomSeed(analogRead(0));
 // NeoPixel Ring simple sketch (c) 2013 Shae Erisson
@@ -31,138 +38,129 @@ int ledPixelsRaw[10][10];
 // example for more information on possible values.
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
-int delayval = 1000; // delay for half a second
+int frameDelay = 100;
+unsigned long frameStamp = millis() - frameDelay;
 
 void setup() {
+  Serial.begin(9600);
   randomSeed(analogRead(0));
   // This is for Trinket 5V 16MHz, you can remove these three lines if you are not using a Trinket
 #if defined (__AVR_ATtiny85__)
   if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
 #endif
   // End of trinket special code
-  
+
   pinMode(button, INPUT);
 
   pixels.begin(); // This initializes the NeoPixel library.
   resetNeopixel();
-  //pixels.show();
+  pixels.show();
 }
 
+int translator[8][2] = {{-1, -1}, {0, -1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}};
+
 void resetNeopixel() {
-  int k = 1;
-  for(int i = 1; k < 9; i++){
-    ledPixels[k][i] = random(0, 2);
-    if(ledPixels[k][i] == 1){
-      pixels.setPixelColor((k - 1) * 8 + (i - 1), pixels.Color(colorOfPattern[0], colorOfPattern[1], colorOfPattern[2]));
-      ledPixelsRaw[k][i] = 1;
-      //ledPixels[i] = 1;
-    }
-    else{
-      pixels.setPixelColor((k - 1) * 8 + (i - 1), pixels.Color(colorOfBackground[0], colorOfBackground[1], colorOfBackground[2]));
-      ledPixelsRaw[k][i] = 0;
-      //ledPixels[i] = 0;
-    }
-    if(i == 8){
+  int k = 0;
+  for (int i = 0; k < HEIGHT; i++) {
+    if (i >= WIDTH) {
       i = 0;
       k++;
     }
+    if (random(0, 2)) newPixels[i][k] = true;
+    else newPixels[i][k] = false;
+    if (newPixels[i][k] == 1) {
+      pixels.setPixelColor(i + (k * WIDTH), pixels.Color(colorOfPattern[0], colorOfPattern[1], colorOfPattern[2]));
+      pixelHistory[0][k][i] = true;
+      //newPixels[i] = 1;
+    } else {
+      pixels.setPixelColor(i + (k * WIDTH), pixels.Color(colorOfBackground[0], colorOfBackground[1], colorOfBackground[2]));
+      pixelHistory[0][i][k] = false;
+      //newPixels[i] = 0;
+    }
     //pixels.show();
   }
+  historyLength = 0;
   timeValii = millis();
-  pixels.show();
-  
+  //pixels.show();
+
   //resetNeopixel();
   //delay(1000);
+  frameStamp = millis();
 }
 
 
 
-void loop(){
-  int k = 1;
+void loop() {
   //oldButtonVal;
   //timeVal;
   buttonVal = digitalRead(button);
-  
-  if(buttonVal == HIGH && millis() - timeVal >= 500 && oldButtonVal == LOW){
+
+  if(buttonEnabled && buttonVal == HIGH && millis() - timeVal >= 500 && oldButtonVal == LOW){
     resetNeopixel();
     timeVal = millis();
     timeValii = millis();
   }
-  
+
   oldButtonVal = buttonVal;
-  
-  //pixels.show();
-  
-  delay(delayval);
-  /*if(millis() - timeValii >= delayval){
-    timeValii = millis();*/
-  k = 1;
-  //resetNeopixel();
-  for(int i = 1; k < 9; i++){
-    lightCount = 0;
-    //if(k - 1 >= 0 && i - 1 >= 0 && i > 0 && k > 0){
-      if(ledPixels[k - 1][i - 1] == 1){
-      lightCount++;
+
+  if (millis() - frameStamp >= frameDelay) {
+    frameStamp = millis();
+    isEmpty = true;
+    isTheSame = true;
+    while (isEmpty || isTheSame) {
+      for (int i = 0; i < WIDTH; i++) {
+        for (int j = 0; j < HEIGHT; j++) {
+          int neighbors = 0;
+          for (int k = 0; k < 8; k++) {
+            int targeted[2] = {translator[k][0] + i, translator[k][1] + j};
+            if (targeted[0] >= 0 && targeted[0] < WIDTH && targeted[1] >= 0 && targeted[1] < HEIGHT) {
+              if (pixelHistory[0][targeted[0]][targeted[1]]) neighbors++;
+            }
+          }
+          if (neighbors == 3 || neighbors == 2 && pixelHistory[0][i][j]) {
+            newPixels[i][j] = true;
+            pixels.setPixelColor(i + (j * WIDTH), pixels.Color(colorOfPattern[0], colorOfPattern[1], colorOfPattern[2]));
+            isEmpty = false;
+          } else {
+            newPixels[i][j] = false;
+            pixels.setPixelColor(i + (j * WIDTH), pixels.Color(colorOfBackground[0], colorOfBackground[1], colorOfBackground[2]));
+          }
+        }
       }
-    //}
-    //if(k - 1 >= 0 && i >= 0 && k > 0){
-      if(ledPixels[k - 1][i] == 1){
-      lightCount++;
+      int matches = false;
+      for (int i = 0; i < historyLength; i++) {
+        matches = true;
+        for (int j = 0; j < WIDTH; j++) {
+          for (int k = 0; k < HEIGHT; k++) {
+            if (newPixels[j][k] != pixelHistory[i][j][k]) {
+              matches = false;
+              break;
+            }
+          }
+          if (matches) break;
+        }
+        if (matches) break;
       }
-    //}
-    //if(k - 1 >= 0 && i + 1 >= 0 && i < 8 && k > 0){
-      if(ledPixels[k - 1][i + 1] == 1){
-      lightCount++;
+      if (!matches) isTheSame = false;
+      if (!isEmpty && !isTheSame) {
+        if (historyLength < HISTORY) historyLength++;
+        for (int i = 0; i < historyLength; i++) {
+          for (int j = 0; j < WIDTH; j++) {
+            for (int k = 0; k < HEIGHT; k++) {
+              if (i < HISTORY - 1) {
+                pixelHistory[i + 1][j][k] = pixelHistory[i][j][k];
+              }
+              if (i == 0) {
+                pixelHistory[i][j][k] = newPixels[j][k];
+              }
+            }
+          }
+        }
       }
-    //}
-    //if(k >= 0 && i - 1 >= 0 && i > 0){
-      if(ledPixels[k][i - 1] == 1){
-      lightCount++;
+      else {
+        resetNeopixel();
       }
-    //}
-    //if(k >= 0 && i + 1 >= 0 && i < 8){
-      if(ledPixels[k][i + 1] == 1){
-      lightCount++;
-      }
-    //}
-    //if(k + 1 >= 0 && i - 1 >= 0 && i > 0 && k < 8){
-      if(ledPixels[k + 1][i - 1] == 1){
-      lightCount++;
-      }
-    //}
-    //if(k + 1 >= 0 && i >= 0 && k < 8){
-      if(ledPixels[k + 1][i] == 1){
-      lightCount++;
-      }
-    //}
-    //if(k + 1 >= 0 && i + 1 >= 0 && i < 8 && k < 8){
-      if(ledPixels[k + 1][i + 1] == 1){
-      lightCount++;
-      }
-    //}
-    if(lightCount < 2 || lightCount > 3){
-      ledPixelsRaw[k][i] = 0;
-      pixels.setPixelColor((k - 1) * 8 + (i - 1), pixels.Color(colorOfBackground[0], colorOfBackground[1], colorOfBackground[2]));
     }
-    if(lightCount == 3){
-      ledPixelsRaw[k][i] = 1;
-      pixels.setPixelColor((k - 1) * 8 + (i - 1), pixels.Color(colorOfPattern[0], colorOfPattern[1], colorOfPattern[2]));
-    }
-    if(i == 8){
-    i = 0;
-    k++;
+    pixels.show();
   }
-  }
-  k = 1;
-  for(int i = 1; k < 9; i++){
-    ledPixels[k][i] = ledPixelsRaw[k][i];
-    if(i == 8){
-    i = 0;
-    k++;
-  }}
-  pixels.show();
-  //delay(1000);
-  //pixels.setPixelColor(0, pixels.Color(50, 0, 0));
-  //pixels.show();
-  //delay(500);
-}//}
+}
