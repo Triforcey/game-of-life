@@ -127,6 +127,7 @@ void loop() {
           }
         }
       }
+      // Sets to false incase no history has yet been recorded.
       int matches = false;
       for (int i = 0; i < historyLength; i++) {
         matches = true;
@@ -137,7 +138,7 @@ void loop() {
               break;
             }
           }
-          if (matches) break;
+          if (!matches) break;
         }
         if (matches) break;
       }
@@ -156,8 +157,9 @@ void loop() {
             }
           }
         }
-      }
-      else {
+      } else {
+        isEmpty = true;
+        isTheSame = true;
         resetNeopixel();
       }
     }
