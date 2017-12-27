@@ -13,7 +13,7 @@ int lightCount;
 #define HEIGHT 8
 int buttonEnabled = false;
 int newPixels[WIDTH][HEIGHT];
-#define HISTORY 50
+#define HISTORY 5
 int pixelHistory[HISTORY][WIDTH][HEIGHT];
 int historyLength;
 int isEmpty;
