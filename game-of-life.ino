@@ -140,17 +140,18 @@ void loop() {
           }
           if (!matches) break;
         }
-        if (matches) break;
+        if (matches) {
+          Serial.println(i);
+          break;
+        }
       }
       if (!matches) isTheSame = false;
       if (!isEmpty && !isTheSame) {
         if (historyLength < HISTORY) historyLength++;
-        for (int i = 0; i < historyLength; i++) {
+        for (int i = historyLength - 2; i >= 0; i--) {
           for (int j = 0; j < WIDTH; j++) {
             for (int k = 0; k < HEIGHT; k++) {
-              if (i < HISTORY - 1) {
-                pixelHistory[i + 1][j][k] = pixelHistory[i][j][k];
-              }
+              pixelHistory[i + 1][j][k] = pixelHistory[i][j][k];
               if (i == 0) {
                 pixelHistory[i][j][k] = newPixels[j][k];
               }
