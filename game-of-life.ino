@@ -38,7 +38,7 @@ int isTheSame;
 // example for more information on possible values.
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 
-int frameDelay = 0;
+int frameDelay = 100;
 unsigned long frameStamp = millis() - frameDelay;
 
 void setup() {
